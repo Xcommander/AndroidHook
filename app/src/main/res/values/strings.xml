@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Hook</string>
+    <string name="go_instrument">go_instrument</string>
+</resources>
