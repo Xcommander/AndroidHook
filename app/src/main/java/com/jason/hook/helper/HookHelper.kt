@@ -3,7 +3,6 @@ package com.jason.hook.helper
 import android.annotation.SuppressLint
 import android.app.Instrumentation
 import android.os.Build
-import android.util.Log
 import com.jason.hook.app.HookApplication
 import com.jason.hook.proxy.IActivityManagerProxy
 import com.jason.hook.proxy.InstrumentationProxy
@@ -31,40 +30,73 @@ object HookHelper {
         mInstrumentationField.set(currentActivityThread, instrumentationProxy)
     }
 
+    //Hook IActivityManager
     @SuppressLint("PrivateApi", "DiscouragedPrivateApi")
     fun hookIActivityManager() {
         //对于不同api，IActivityManager不一样
-        if (Build.VERSION.SDK_INT >= 30) {
-            //对于api为30，IActivityManager为IActivityTaskManager.IActivityTaskManager来自于singleton，
-            // 而singleton是静态变量，来自于ActivityTaskManager.IActivityTaskManagerSingleton
-            // 1、获取IActivityTaskManagerSingleton对象
-            val activityTaskManagerClass = Class.forName("android.app.ActivityTaskManager")
-            val iActivityTaskManagerSingletonField =
-                activityTaskManagerClass.getDeclaredField("IActivityTaskManagerSingleton")
-            iActivityTaskManagerSingletonField.isAccessible = true
-            val iActivityTaskManagerSingleton = iActivityTaskManagerSingletonField.get(null)
 
+        //对于api为29以上，IActivityManager为ActivityTaskManager中的Singleton
+        //对于api为26-28，IActivityManager为ActivityManager的Singleton
+        //对于api为26以下，IActivityManager为ActivityManagerNative的Singleton
 
-            //2、从iActivityTaskManagerSingleton获取IActivityTaskActivity
-            val singletonClass = Class.forName("android.util.Singleton")
-            val mInstanceField=singletonClass.getDeclaredField("mInstance")
-            val getMethod = singletonClass.getDeclaredMethod("get")
-            getMethod.isAccessible = true
-            val iActivityTaskManager = getMethod.invoke(iActivityTaskManagerSingleton)
-
-
-            //获取IActivityTaskManager的class对象
-            val iActivityTaskManagerClass = Class.forName("android.app.IActivityTaskManager")
-
-            //3、获取代理
-            val proxy = IActivityManagerProxy.newProxyInstance(
-                HookApplication.instance.classLoader,
-                arrayOf(iActivityTaskManagerClass), IActivityManagerProxy(iActivityTaskManager)
-            )
-            //4、偷梁换柱
-            mInstanceField.set(iActivityTaskManager,proxy)
-
+        val activityManagerCLassName = when {
+            Build.VERSION.SDK_INT >= 29 -> {
+                "android.app.ActivityTaskManager"
+            }
+            Build.VERSION.SDK_INT >= 26 -> {
+                "android.app.ActivityManager"
+            }
+            else -> {
+                "android.app.ActivityManagerNative"
+            }
         }
+        val iActivityManagerSingletonFieldName = when {
+            Build.VERSION.SDK_INT >= 29 -> {
+                "IActivityTaskManagerSingleton"
+            }
+            Build.VERSION.SDK_INT >= 26 -> {
+                "IActivityManagerSingleton"
+            }
+            else -> {
+                "gDefault"
+            }
+        }
+
+        val iActivityManagerClassName = if (Build.VERSION.SDK_INT >= 29) {
+            "android.app.IActivityTaskManager"
+        } else {
+            "android.app.IActivityManager"
+        }
+        // 而singleton是静态变量，来自于ActivityTaskManager.IActivityTaskManagerSingleton
+        // 1、获取IActivityTaskManagerSingleton对象
+        val activityManagerClass = Class.forName(activityManagerCLassName)
+        val iActivityManagerSingletonField =
+            activityManagerClass.getDeclaredField(iActivityManagerSingletonFieldName)
+        iActivityManagerSingletonField.isAccessible = true
+        val iActivityManagerSingleton = iActivityManagerSingletonField.get(null)
+
+
+        //2、从iActivityTaskManagerSingleton获取IActivityTaskManager
+        val singletonClass = Class.forName("android.util.Singleton")
+        val mInstanceField = singletonClass.getDeclaredField("mInstance")
+        mInstanceField.isAccessible = true
+        //这里注意：为什么不从mInstanceField拿？
+        // 是因为mInstance拿到的null，此时Singleton没有初始化好。所以我们主动调用get方法，通过getMethod来拿到iActivityTaskManager
+        val getMethod = singletonClass.getDeclaredMethod("get")
+        getMethod.isAccessible = true
+        val iActivityTaskManager = getMethod.invoke(iActivityManagerSingleton)
+
+
+        //获取IActivityTaskManager的class对象
+        val iActivityManagerClass = Class.forName(iActivityManagerClassName)
+
+        //3、获取代理
+        val proxy = IActivityManagerProxy.newProxyInstance(
+            Thread.currentThread().contextClassLoader,
+            arrayOf(iActivityManagerClass), IActivityManagerProxy(iActivityTaskManager)
+        )
+        //4、偷梁换柱
+        mInstanceField.set(iActivityManagerSingleton, proxy)
 
     }
 

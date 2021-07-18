@@ -22,7 +22,7 @@ open class InstrumentationProxy(mInstrumentation: Instrumentation, packageManage
 
     //执行启动Activity流程
     @RequiresApi(Build.VERSION_CODES.M)
-    @SuppressLint("QueryPermissionsNeeded")
+    @SuppressLint("QueryPermissionsNeeded", "PrivateApi")
     open fun execStartActivity(
         who: Context, contextThread: IBinder?, token: IBinder?, target: Activity?,
         intent: Intent, requestCode: Int, options: Bundle?

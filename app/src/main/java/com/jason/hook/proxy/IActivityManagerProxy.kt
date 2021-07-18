@@ -1,13 +1,14 @@
 package com.jason.hook.proxy
 
 import android.content.Intent
+import android.util.Log
 import com.jason.hook.Constant
 import com.jason.hook.app.HookApplication
 import java.lang.reflect.*
 
 //动态代理类，在不同API下，IActivityManager是不一样的。
-class IActivityManagerProxy(IActivityTaskManager: Any?) : InvocationHandler {
-    private val mActivityManager = IActivityTaskManager
+class IActivityManagerProxy(activityManager: Any?) : InvocationHandler {
+    private val mActivityManager = activityManager
 
     companion object {
         // END Android-changed: How proxies are generated.
@@ -38,8 +39,10 @@ class IActivityManagerProxy(IActivityTaskManager: Any?) : InvocationHandler {
 
             }
         }
-        //通过反射，转发给对应的委托类
-        return method?.invoke(mActivityManager, args)
+        //通过反射，转发给对应的委托类。
+        // 这里有个大坑，也就是在kotlin array是是数组，而invoke中的args是可变参数类型。所以会报类型错误。
+        //Kotlin的解决方法是在array加上*，为了防止空指针名，可以用empty()来表示。所以最终表达为*(args?:empty())
+        return method?.invoke(mActivityManager, *(args?: emptyArray()))
     }
 
 }
