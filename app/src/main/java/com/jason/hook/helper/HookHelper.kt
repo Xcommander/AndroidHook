@@ -3,9 +3,13 @@ package com.jason.hook.helper
 import android.annotation.SuppressLint
 import android.app.Instrumentation
 import android.os.Build
+import android.os.Handler
 import com.jason.hook.app.HookApplication
+import com.jason.hook.proxy.HCallbackProxy
 import com.jason.hook.proxy.IActivityManagerProxy
 import com.jason.hook.proxy.InstrumentationProxy
+import dalvik.system.DexClassLoader
+import dalvik.system.PathClassLoader
 
 object HookHelper {
     //Hook mInstrumentation
@@ -30,9 +34,16 @@ object HookHelper {
         mInstrumentationField.set(currentActivityThread, instrumentationProxy)
     }
 
+
+    fun hookAMS() {
+        //Hook Activity启动点，Activity还原点
+        hookIActivityManager()
+        hookCallback()
+    }
+
     //Hook IActivityManager
     @SuppressLint("PrivateApi", "DiscouragedPrivateApi")
-    fun hookIActivityManager() {
+    private fun hookIActivityManager() {
         //对于不同api，IActivityManager不一样
 
         //对于api为29以上，IActivityManager为ActivityTaskManager中的Singleton
@@ -97,6 +108,34 @@ object HookHelper {
         )
         //4、偷梁换柱
         mInstanceField.set(iActivityManagerSingleton, proxy)
+
+    }
+
+    //Hook ActivityThread中Handler的mCallback
+    @SuppressLint("DiscouragedPrivateApi", "PrivateApi")
+    private fun hookCallback() {
+        //先获取ActivityThread
+        //通过反射，先拿到ActivityThread对象
+        val activityThreadClass = Class.forName("android.app.ActivityThread")
+        val currentActivityThreadMethod =
+            activityThreadClass.getDeclaredMethod("currentActivityThread")
+        currentActivityThreadMethod.isAccessible = true
+        val currentActivityThread = currentActivityThreadMethod.invoke(null)
+
+        //获取Handler对象
+        val mHField = activityThreadClass.getDeclaredField("mH")
+        mHField.isAccessible = true
+        val mH = mHField.get(currentActivityThread) as Handler
+
+        //从Handler对象中获取mCallback
+        val mHClass = Class.forName("android.os.Handler")
+        val mCallbackField = mHClass.getDeclaredField("mCallback")
+        mCallbackField.isAccessible = true
+
+
+        //进行替换
+        val proxy = HCallbackProxy(mH)
+        mCallbackField.set(mH, proxy)
 
     }
 

@@ -12,8 +12,7 @@ class HookApplication : Application() {
     override fun attachBaseContext(base: Context?) {
         super.attachBaseContext(base)
         instance = this
-        HookHelper.hookIActivityManager()
+        HookHelper.hookAMS()
     }
-
 
 }

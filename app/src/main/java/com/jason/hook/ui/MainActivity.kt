@@ -13,7 +13,7 @@ class MainActivity : AppCompatActivity() {
         val dataBinding =
             DataBindingUtil.setContentView<ActivityMainBinding>(this, R.layout.activity_main)
         dataBinding.startInstrument.setOnClickListener {
-            startActivity(Intent(this, InstrumentHookActivity::class.java))
+            startActivity(Intent(this, HookActivity::class.java))
         }
 
     }
