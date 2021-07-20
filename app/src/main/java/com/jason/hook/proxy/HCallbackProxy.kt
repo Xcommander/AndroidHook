@@ -62,6 +62,8 @@ class HCallbackProxy(private val handler: Handler) : Handler.Callback {
                 val target = mIntent.getStringExtra(Constant.TARGET_ACTIVITY)
                 if (target != null && target != "") {//则说明这个是插件Activity
                     //还原为插件Activity
+                    val targetPKG = mIntent.getStringExtra(Constant.DEX_PLUGIN)
+
                     mIntent.setClassName(HookApplication.instance.packageName, target)
                 }
             }

@@ -2,6 +2,7 @@ package com.jason.hook.app
 
 import android.app.Application
 import android.content.Context
+import com.jason.hook.helper.DexPluginHelper
 import com.jason.hook.helper.HookHelper
 
 class HookApplication : Application() {
@@ -13,6 +14,8 @@ class HookApplication : Application() {
         super.attachBaseContext(base)
         instance = this
         HookHelper.hookAMS()
+        DexPluginHelper.copyAllAssetsApk()
+        DexPluginHelper.installDexPlugin()
     }
 
 }

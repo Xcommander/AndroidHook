@@ -1,2 +1,3 @@
 rootProject.name = "Hook"
 include ':app'
+include ':dexplugin'
