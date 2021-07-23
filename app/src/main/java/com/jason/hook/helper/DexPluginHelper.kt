@@ -1,6 +1,8 @@
 package com.jason.hook.helper
 
 import android.content.Context
+import android.content.res.AssetManager
+import android.content.res.Resources
 import android.util.Log
 import com.jason.hook.app.HookApplication
 import dalvik.system.PathClassLoader
@@ -14,7 +16,9 @@ object DexPluginHelper {
     private const val FILE_FILTER = ".apk"
     private const val ASSETS_PLUGINS = "plugins"
     private const val TAG = "DexPluginHelper"
-    fun copyAllAssetsApk() {
+
+
+    private fun copyAllAssetsApk() {
         val startTime = System.currentTimeMillis()
         try {
             HookApplication.instance.run {
@@ -60,6 +64,8 @@ object DexPluginHelper {
     }
 
     fun installDexPlugin() {
+        //安装dex资源
+        copyAllAssetsApk()
         HookApplication.instance.run {
 
             val dir = getDir(APK_DIR, Context.MODE_PRIVATE)
@@ -74,6 +80,7 @@ object DexPluginHelper {
                     }
                 }
             }
+            Log.e("xulinchao","$dexPath")
             if (dexPath.isNotEmpty()) {//有插件，则进行加载
 
                 //1. 先获取宿主的dexPathList

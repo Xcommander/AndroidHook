@@ -34,8 +34,9 @@ open class InstrumentationProxy(mInstrumentation: Instrumentation, packageManage
         val resolveInfoList =
             mPackageManager.queryIntentActivities(intent, PackageManager.MATCH_ALL)
         if (resolveInfoList.size == 0) {//2. 未查询到，则需要占位Activity来帮忙
-            //3. 保存目标activity的类名，后面使用
-            intent.putExtra(Constant.TARGET_ACTIVITY, intent.component?.className)
+            //3. 保存目标activity，后面使用
+            val newIntent = intent.cloneFilter()
+            intent.putExtra(Constant.DEX_PLUGIN, newIntent)
             //4. 将占位activity替换进去，用于AMS检查
             intent.setClassName(who, Constant.STUB_ACTIVITY)
         }
@@ -82,14 +83,12 @@ open class InstrumentationProxy(mInstrumentation: Instrumentation, packageManage
         intent: Intent?
     ): Activity? {
         Log.e("xulinchao", "new Activity")
-        val targetName = intent?.getStringExtra(Constant.TARGET_ACTIVITY)
 
-        return mBase.newActivity(
-            cl, if (!TextUtils.isEmpty(targetName)) {//不为null，则说明这个没有注册的activity
-                targetName
-            } else {
-                className
-            }, intent
-        )
+        val target = intent?.getParcelableExtra<Intent>(Constant.DEX_PLUGIN)
+        return if (target != null) {
+            mBase.newActivity(cl, target.component?.className, target)
+        } else {
+            mBase.newActivity(cl, className, intent)
+        }
     }
 }

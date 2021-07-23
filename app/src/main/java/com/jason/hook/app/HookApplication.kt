@@ -14,7 +14,6 @@ class HookApplication : Application() {
         super.attachBaseContext(base)
         instance = this
         HookHelper.hookAMS()
-        DexPluginHelper.copyAllAssetsApk()
         DexPluginHelper.installDexPlugin()
     }
 

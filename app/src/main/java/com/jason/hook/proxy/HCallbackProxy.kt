@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Handler
 import android.os.Message
+import android.util.Log
 import com.jason.hook.Constant
 import com.jason.hook.app.HookApplication
 
@@ -30,9 +31,9 @@ class HCallbackProxy(private val handler: Handler) : Handler.Callback {
         intentField.isAccessible = true
         val intent = intentField.get(r) as Intent
         //从intent拿到数据,进行还原
-        val target = intent.getStringExtra(Constant.TARGET_ACTIVITY)
-        if (target != null && target != "") {
-            intent.setClassName(HookApplication.instance.packageName, target)
+        val target = intent.getParcelableExtra<Intent>(Constant.DEX_PLUGIN)
+        if (target != null) {
+            intentField.set(r, target)
         }
     }
 
@@ -59,12 +60,10 @@ class HCallbackProxy(private val handler: Handler) : Handler.Callback {
                     Class.forName(launchActivityItemClassName).getDeclaredField("mIntent")
                 mIntentField.isAccessible = true
                 val mIntent = mIntentField.get(launchActivityItem) as Intent
-                val target = mIntent.getStringExtra(Constant.TARGET_ACTIVITY)
-                if (target != null && target != "") {//则说明这个是插件Activity
+                val target = mIntent.getParcelableExtra<Intent>(Constant.DEX_PLUGIN)
+                if (target != null) {//则说明这个是插件Activity
                     //还原为插件Activity
-                    val targetPKG = mIntent.getStringExtra(Constant.DEX_PLUGIN)
-
-                    mIntent.setClassName(HookApplication.instance.packageName, target)
+                    mIntentField.set(launchActivityItem, target)
                 }
             }
         }
